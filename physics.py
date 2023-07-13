@@ -35,7 +35,7 @@ def will_it_float(V: float, mass: float) -> bool:
     if buoyancy_force > gravity_force:
         return True
     elif buoyancy_force == gravity_force:
-        raise Exception("There is neutral buoyancy. It will neither float nor sink.")
+        return None
     else:
         return False
 
