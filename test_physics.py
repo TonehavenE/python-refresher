@@ -16,6 +16,7 @@ class TestPhysics(unittest.TestCase):
 
     def test_will_it_float(self):
          self.assertEqual(physics.will_it_float(0.1, 50), True)
+         self.assertEqual(physics.will_it_float(0.1, 1000), False)
          self.assertEqual(physics.will_it_float(0.1, 100), None)
          self.assertNotEqual(physics.will_it_float(0.1, 1000), True)
          self.assertRaises(TypeError, physics.will_it_float, "0.1", "100")
