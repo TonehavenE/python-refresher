@@ -12,6 +12,9 @@ class TestPhysics(unittest.TestCase):
         self.assertEqual(physics.calculate_buoyancy(0.1, 1000), 981)
         self.assertRaises(TypeError, physics.calculate_buoyancy, "foo", "bar")
         self.assertRaises(ValueError, physics.calculate_buoyancy, -100, 1000)
+        self.assertRaises(ValueError, physics.calculate_buoyancy, 100, -1000)
+        self.assertRaises(ValueError, physics.calculate_buoyancy, 100, 0)
+        self.assertRaises(ValueError, physics.calculate_buoyancy, 0, 100)
 
 
     def test_will_it_float(self):
@@ -21,6 +24,9 @@ class TestPhysics(unittest.TestCase):
          self.assertNotEqual(physics.will_it_float(0.1, 1000), True)
          self.assertRaises(TypeError, physics.will_it_float, "0.1", "100")
          self.assertRaises(ValueError, physics.will_it_float, -0.1, 100)
+         self.assertRaises(ValueError, physics.will_it_float, 0.1, -100)
+         self.assertRaises(ValueError, physics.will_it_float, 0.0, 100)
+         self.assertRaises(ValueError, physics.will_it_float, 0.1, 0.0)
          
 
 
@@ -29,6 +35,7 @@ class TestPhysics(unittest.TestCase):
         self.assertNotEqual(physics.calculate_pressure(100), 0)
         self.assertRaises(TypeError, physics.calculate_pressure, "foo")
         self.assertRaises(Exception, physics.calculate_pressure, -100)
+
 
 if __name__ == "__main__":
     unittest.main()
