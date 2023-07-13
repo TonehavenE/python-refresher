@@ -31,8 +31,8 @@ class TestPhysics(unittest.TestCase):
 
 
     def test_calculate_pressure(self):
-        self.assertEqual(physics.calculate_pressure(10), 98100)
-        self.assertNotEqual(physics.calculate_pressure(100), 0)
+        self.assertEqual(physics.calculate_pressure(10), 98100 + 101325)
+        self.assertNotEqual(physics.calculate_pressure(11), 98100 + 101325)
         self.assertRaises(TypeError, physics.calculate_pressure, "foo")
         self.assertRaises(Exception, physics.calculate_pressure, -100)
 

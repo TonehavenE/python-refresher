@@ -63,8 +63,9 @@ def calculate_pressure(depth: float) -> float:
     Returns:
         float: pressure in Pascals
     """
+    pressure_at_surface = 101325
     if depth < 0:
         raise Exception("Depth is negative. This function assumes depth is positive below the surface.")
     
     pressure = density_water * gravity * depth
-    return pressure
+    return pressure + pressure_at_surface
