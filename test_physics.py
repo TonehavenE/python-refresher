@@ -5,6 +5,7 @@ Eben Quenneville
 """
 import unittest
 import physics
+import numpy as np
 
 class TestPhysics(unittest.TestCase):
     def test_calculate_buoyancy(self):
@@ -35,6 +36,36 @@ class TestPhysics(unittest.TestCase):
         self.assertNotEqual(physics.calculate_pressure(11), 98100 + 101325)
         self.assertRaises(TypeError, physics.calculate_pressure, "foo")
         self.assertRaises(Exception, physics.calculate_pressure, -100)
+
+    def test_calculate_acceleration(self):
+        self.assertEqual(physics.calculate_acceleration(100, 10), 10)
+        self.assertNotEqual(physics.calculate_acceleration(1000, 10), 10)
+        self.assertRaises(ValueError, physics.calculate_acceleration, 100, 0)
+        self.assertRaises(ValueError, physics.calculate_acceleration, 100, -10)
+
+    def test_calculate_angular_acceleration(self):
+        self.assertEqual(physics.calculate_angular_acceleration(10, 1), 10)
+        self.assertnotEqual(physics.calculate_angular_acceleration(10, 10), 10)
+        self.assertRaises(ValueError, physics.calculate_angular_acceleration, 100, 0)
+        self.assertRaises(ValueError, physics.calculate_angular_acceleration, 100, -10)
+
+    def test_calculate_torque(self):
+        self.assertEqual(physics.calculate_torque(10, 0, 1), 0)
+        self.assertNotEqual(physics.calculate_torque(10, 10, 1), 0)
+        self.assertEqual(physics.calculate_torque(10, 90, 1), 10)
+    
+    def test_calculate_moment_of_inertia(self):
+        self.assertEqual(physics.calculate_moment_of_inertia(10, 1), 10)
+        self.assertNotEqual(physics.calculate_moment_of_inertia(10, 10), 10)
+        self.assertRaises(ValueError, physics.calculate_moment_of_inertia, -100, 10)
+        self.assertRaises(ValueError, physics.calculate_moment_of_inertia, 0, 10)
+
+    def test_calculate_auv_acceleration(self):
+        self.assertEqual(physics.calculate_auv_acceleration(10, 0), np.array([10, 0]))
+        self.assertEqual(physics.calculate_auv_acceleration(10, np.pi / 2), np.array([0, 10]))
+        self.assertNotEqual(physics.calculate_auv_acceleration(10, np.pi / 3), np.array([0, 10]))
+        self.assertRaises(ValueError, physics.calculate_auv_acceleration, 101, 0)
+        
 
 
 if __name__ == "__main__":
