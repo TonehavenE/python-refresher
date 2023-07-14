@@ -7,6 +7,7 @@ import unittest
 import physics
 import numpy as np
 
+
 class TestPhysics(unittest.TestCase):
     def test_calculate_buoyancy(self):
         self.assertNotEqual(physics.calculate_buoyancy(1, 1000), 0)
@@ -17,19 +18,16 @@ class TestPhysics(unittest.TestCase):
         self.assertRaises(ValueError, physics.calculate_buoyancy, 100, 0)
         self.assertRaises(ValueError, physics.calculate_buoyancy, 0, 100)
 
-
     def test_will_it_float(self):
-         self.assertEqual(physics.will_it_float(0.1, 50), True)
-         self.assertEqual(physics.will_it_float(0.1, 1000), False)
-         self.assertEqual(physics.will_it_float(0.1, 100), None)
-         self.assertNotEqual(physics.will_it_float(0.1, 1000), True)
-         self.assertRaises(TypeError, physics.will_it_float, "0.1", "100")
-         self.assertRaises(ValueError, physics.will_it_float, -0.1, 100)
-         self.assertRaises(ValueError, physics.will_it_float, 0.1, -100)
-         self.assertRaises(ValueError, physics.will_it_float, 0.0, 100)
-         self.assertRaises(ValueError, physics.will_it_float, 0.1, 0.0)
-         
-
+        self.assertEqual(physics.will_it_float(0.1, 50), True)
+        self.assertEqual(physics.will_it_float(0.1, 1000), False)
+        self.assertEqual(physics.will_it_float(0.1, 100), None)
+        self.assertNotEqual(physics.will_it_float(0.1, 1000), True)
+        self.assertRaises(TypeError, physics.will_it_float, "0.1", "100")
+        self.assertRaises(ValueError, physics.will_it_float, -0.1, 100)
+        self.assertRaises(ValueError, physics.will_it_float, 0.1, -100)
+        self.assertRaises(ValueError, physics.will_it_float, 0.0, 100)
+        self.assertRaises(ValueError, physics.will_it_float, 0.1, 0.0)
 
     def test_calculate_pressure(self):
         self.assertEqual(physics.calculate_pressure(10), 98100 + 101325)
@@ -53,7 +51,7 @@ class TestPhysics(unittest.TestCase):
         self.assertEqual(physics.calculate_torque(10, 0, 1), 0)
         self.assertNotEqual(physics.calculate_torque(10, 10, 1), 0)
         self.assertEqual(physics.calculate_torque(10, 90, 1), 10)
-    
+
     def test_calculate_moment_of_inertia(self):
         self.assertEqual(physics.calculate_moment_of_inertia(10, 1), 10)
         self.assertNotEqual(physics.calculate_moment_of_inertia(10, 10), 10)
@@ -62,10 +60,33 @@ class TestPhysics(unittest.TestCase):
 
     def test_calculate_auv_acceleration(self):
         self.assertEqual(physics.calculate_auv_acceleration(10, 0), np.array([10, 0]))
-        self.assertEqual(physics.calculate_auv_acceleration(10, np.pi / 2), np.array([0, 10]))
-        self.assertNotEqual(physics.calculate_auv_acceleration(10, np.pi / 3), np.array([0, 10]))
+        self.assertEqual(
+            physics.calculate_auv_acceleration(10, np.pi / 2), np.array([0, 10])
+        )
+        self.assertNotEqual(
+            physics.calculate_auv_acceleration(10, np.pi / 3), np.array([0, 10])
+        )
         self.assertRaises(ValueError, physics.calculate_auv_acceleration, 101, 0)
-        
+
+    def test_calculate_angular_acceleration(self):
+        self.assertEqual(physics.calculate_auv_angular_acceleration(100, np.pi / 2), 50)
+        self.assertNotEqual(
+            physics.calculate_auv_angular_acceleration(1000, np.pi / 2), 50
+        )
+        self.assertRaises(
+            ValueError,
+            physics.calculate_auv_angular_acceleration,
+            1000,
+            np.pi / 2,
+            -10,
+            1,
+        )
+
+    def test_calculate_auv2_acceleration(self):
+        self.assertEqual(
+            physics.calculate_auv2_acceleration(np.array([0, 0, 0, 0]), np.pi / 4, 0.0),
+            np.array([0, 0]),
+        )
 
 
 if __name__ == "__main__":

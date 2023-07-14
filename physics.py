@@ -6,8 +6,9 @@ Eben Quenneville
 """
 import numpy as np
 
-density_water = 1000 # kg/m^3
-gravity = 9.81 # m/s^2, change if you are in space
+density_water = 1000  # kg/m^3
+gravity = 9.81  # m/s^2, change if you are in space
+
 
 def calculate_buoyancy(volume: float, density_fluid: float) -> float:
     """
@@ -23,9 +24,10 @@ def calculate_buoyancy(volume: float, density_fluid: float) -> float:
         raise ValueError("Volume is negative.")
     if density_fluid <= 0:
         raise ValueError("Density is negative.")
-    
+
     buoyancy = density_fluid * volume * gravity
     return buoyancy
+
 
 def will_it_float(volume: float, mass: float) -> bool:
     """
@@ -37,22 +39,23 @@ def will_it_float(volume: float, mass: float) -> bool:
     Returns:
         bool: True if the object will float, False if it will sink
     """
-    if (volume <= 0):
+    if volume <= 0:
         raise ValueError("Volume or mass is negative.")
-    if (mass <= 0):
+    if mass <= 0:
         raise ValueError("Volume or mass is negative.")
-    
+
     buoyancy_force = calculate_buoyancy(volume, density_water)
     gravity_force = mass * gravity
     if buoyancy_force == gravity_force:
         return None
-    
+
     if buoyancy_force > gravity_force:
         return True
     elif buoyancy_force < gravity_force:
         return False
     else:
         return None
+
 
 def calculate_pressure(depth: float) -> float:
     """
@@ -66,10 +69,13 @@ def calculate_pressure(depth: float) -> float:
     """
     pressure_at_surface = 101325
     if depth < 0:
-        raise Exception("Depth is negative. This function assumes depth is positive below the surface.")
-    
+        raise Exception(
+            "Depth is negative. This function assumes depth is positive below the surface."
+        )
+
     pressure = density_water * gravity * depth
     return pressure + pressure_at_surface
+
 
 def calculate_acceleration(force: float, mass: float) -> float:
     """
@@ -85,6 +91,7 @@ def calculate_acceleration(force: float, mass: float) -> float:
     acceleration = force / mass
     return acceleration
 
+
 def calculate_angular_acceleration(torque: float, moment_of_inertia: float) -> float:
     """
     Calculates the angular acceleration on the object given the torque and moment of inertia.
@@ -94,13 +101,16 @@ def calculate_angular_acceleration(torque: float, moment_of_inertia: float) -> f
     Returns:
         float: the angular acceleration in radians per second squared
     """
-    if moment_of_inertia <= 0: 
+    if moment_of_inertia <= 0:
         raise ValueError("Moment of inertia is less than or equal to 0.")
 
     angular_acceleration = torque / moment_of_inertia
     return angular_acceleration
 
-def calculate_torque(force_magnitude: float, force_direction: float, moment_arm: float) -> float:
+
+def calculate_torque(
+    force_magnitude: float, force_direction: float, moment_arm: float
+) -> float:
     """
     Calculates the torque applied to an object given the force applied to it and the distance from the axis of rotation.
     Arguments:
@@ -113,6 +123,7 @@ def calculate_torque(force_magnitude: float, force_direction: float, moment_arm:
     torque = force_magnitude * np.sin(force_direction * np.pi / 180) * moment_arm
     return torque
 
+
 def calculate_moment_of_inertia(mass: float, distance: float) -> float:
     """
     Calculates the moment of inertia of an object given mass and distance from the center of mass to axis of rotation.
@@ -124,11 +135,18 @@ def calculate_moment_of_inertia(mass: float, distance: float) -> float:
     """
     if mass <= 0:
         raise ValueError("Mass is less than or equal to 0.")
-    
+
     moment_of_inertia = mass * distance**2
     return moment_of_inertia
 
-def calculate_auv_acceleration(force_magnitude: float, force_angle: float, mass: float = 100, volume: float = 0.1, thruster_distance: float = 0.5) -> float:
+
+def calculate_auv_acceleration(
+    force_magnitude: float,
+    force_angle: float,
+    mass: float = 100,
+    volume: float = 0.1,
+    thruster_distance: float = 0.5,
+) -> float:
     """
     Calculates the acceleration of the AUV in the 2D plane.
     Arguments:
@@ -142,16 +160,26 @@ def calculate_auv_acceleration(force_magnitude: float, force_angle: float, mass:
     """
     if force_magnitude > 100:
         raise ValueError("The thruster should only apply a force up to 100N.")
-    
+
     try:
-        acceleration_x = calculate_acceleration((force_magnitude * np.cos(force_angle)), mass)
-        acceleration_y = calculate_acceleration((force_magnitude * np.sin(force_angle)), mass)
+        acceleration_x = calculate_acceleration(
+            (force_magnitude * np.cos(force_angle)), mass
+        )
+        acceleration_y = calculate_acceleration(
+            (force_magnitude * np.sin(force_angle)), mass
+        )
         return np.array([acceleration_x, acceleration_y])
     except Exception as e:
         print("There is an exception when calling calculate_acceleration.")
         return None
 
-def calculate_auv_angular_acceleration(force_magnitude: float, force_direction: float, moment_of_inertia: float = 1, thruster_distance: float = 0.5) -> float:
+
+def calculate_auv_angular_acceleration(
+    force_magnitude: float,
+    force_direction: float,
+    moment_of_inertia: float = 1,
+    thruster_distance: float = 0.5,
+) -> float:
     """
     Calculates the angular acceleration of the AUV in radians / s^2
     Arguments:
@@ -162,33 +190,81 @@ def calculate_auv_angular_acceleration(force_magnitude: float, force_direction: 
     Returns:
         float or None: the angular acceleration in rads / s^2, None if there is an error
     """
-    if moment_of_inertia <= 0: 
+    if moment_of_inertia <= 0:
         raise ValueError("Moment of inertia is less than or equal to 0.")
-    
+
+    if thruster_distance < 0:
+        raise ValueError("The thruster distance is negative.")
+
     try:
-        torque = calculate_torque(force_magnitude, force_direction, thruster_distance)
+        torque = calculate_torque(
+            force_magnitude, force_direction * 180 / np.pi, thruster_distance
+        )
         angular_acceleration = calculate_angular_acceleration(torque, moment_of_inertia)
         return angular_acceleration
     except Exception as e:
-        print("There is an exception from calculating the angular acceleration. Check the inputs.")
+        print(
+            "There is an exception from calculating the angular acceleration. Check the inputs."
+        )
         return None
 
-def calculate_auv2_acceleration(thrusters: np.ndarray, alpha: float, mass: float = 100) -> float:
+
+def calculate_auv2_acceleration(
+    thrusters: np.ndarray, alpha: float, theta: float, mass: float = 100
+) -> float:
     """
     Calculates the acceleration of the AUV in the 2D plane given an array of thrusters.
     Arguments:
         thrusters: np.ndarray,  the magnitudes of the forces applied by the thrusters in Newtons
         alpha: float, the angle of the thrusters in radians.
+        theta: float, the angle of the AUV
         mass: float = 100: the mass of the AUV in kilograms. The default value is 100kg.
     Returns:
         float, acceleration of the AUV
     """
-    projection_matrix = np.ndarray([
-        [np.cos(alpha), np.cos(alpha), -np.cos(alpha), -np.cos(alpha)], 
-        [np.sin(alpha), -np.sin(alpha), -np.sin(alpha), np.sin(alpha)]])
-    (force_x, force_y) = projection_matrix.matmul(thrusters)
-    print(force_x, force_y)
-    acceleration = np.ndarray([
-        calculate_acceleration(force_x, mass), 
-        calculate_acceleration(force_y, mass)])
+    projection_matrix = np.ndarray(
+        [
+            [np.cos(alpha), np.cos(alpha), -np.cos(alpha), -np.cos(alpha)],
+            [np.sin(alpha), -np.sin(alpha), -np.sin(alpha), np.sin(alpha)],
+        ]
+    )
+    projected_forces = projection_matrix.matmul(thrusters)
+    rotation_matrix = np.ndarray(
+        [[np.cos(alpha), -np.sin(alpha)], [np.sin(alpha), np.cos(alpha)]]
+    )
+    (force_x, force_y) = rotation_matrix.matmul(projected_forces)
+    acceleration = np.ndarray(
+        [calculate_acceleration(force_x, mass), calculate_acceleration(force_y, mass)]
+    )
     return acceleration
+
+
+def calculate_auv2_angular_acceleration(
+    thrusters: np.ndarray,
+    alpha: float,
+    horizontal_distance: float,
+    vertical_distance: float,
+    moment_of_inertia: float = 100,
+):
+    """
+    Calculates the angular acceleration of the AUV.
+    thrusters: float, an array of the magnitudes of the forces in Newtons
+    alpha: float, the angle of the thrusters
+    horizontal_distance: float, the horizontal distance from the center of mass of the AUV to the thrusters, in meters
+    vertical_distance: float, the vertical distance from the center of mass of the AUV to the thrusters, in meters
+    moment_of_inertia: float=100, the moment of inertia of the AUV in kg * m^2
+    """
+    inertia_array = np.array(
+        [
+            np.sin(alpha) * horizontal_distance + np.cos(alpha) * vertical_distance,
+            -np.sin(alpha) * horizontal_distance - np.cos(alpha),
+            np.sin(alpha) * horizontal_distance + np.cos(alpha),
+            -np.sin(alpha) * horizontal_distance - np.cos(alpha),
+        ]
+    )
+    torques = inertia_array.matmul(thrusters)
+    total_torque = np.sum(torques)
+    angular_acceleration = calculate_angular_acceleration(
+        total_torque, moment_of_inertia
+    )
+    return angular_acceleration
