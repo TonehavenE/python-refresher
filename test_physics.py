@@ -59,12 +59,20 @@ class TestPhysics(unittest.TestCase):
         self.assertRaises(ValueError, physics.calculate_moment_of_inertia, 0, 10)
 
     def test_calculate_auv_acceleration(self):
-        self.assertEqual(physics.calculate_auv_acceleration(10, 0), np.array([10, 0]))
-        self.assertEqual(
-            physics.calculate_auv_acceleration(10, np.pi / 2), np.array([0, 10])
+        self.assertTrue(np.allclose(
+            physics.calculate_auv_acceleration(10, 0), 
+            np.array([0.1, 0]))
         )
-        self.assertNotEqual(
-            physics.calculate_auv_acceleration(10, np.pi / 3), np.array([0, 10])
+        self.assertTrue(np.allclose(
+            physics.calculate_auv_acceleration(10, np.pi / 2), 
+            np.array([0, 0.1])
+        )
+        )
+        self.assertFalse(
+            np.allclose(
+                physics.calculate_auv_acceleration(10, np.pi / 3), \
+                np.array([0, 0.1])
+            )
         )
         self.assertRaises(ValueError, physics.calculate_auv_acceleration, 101, 0)
 
@@ -83,11 +91,62 @@ class TestPhysics(unittest.TestCase):
         )
 
     def test_calculate_auv2_acceleration(self):
-        self.assertEqual(
+        # 0 forces should result in no acceleration
+        self.assertTrue(np.allclose(
             physics.calculate_auv2_acceleration(np.array([0, 0, 0, 0]), np.pi / 4, 0.0),
             np.array([0, 0]),
+        ))
+        # Equivalent forces should cancel out
+        self.assertTrue(np.allclose(
+            physics.calculate_auv2_acceleration(np.array([10, 10, 10, 10]), np.pi / 4, 0.0),
+            np.array([0, 0]),
+        ))
+        # If F1 and F2 are positive and equal, then the object should only accelerate in X
+        self.assertTrue(np.allclose(
+            physics.calculate_auv2_acceleration(np.array([10, 10, 0, 0]), np.pi / 4, 0.0),
+            np.array([0.141422, 0]),
+        ))
+        # if alpha is pi/2 rads, then all acceleration should be vertical
+        self.assertTrue(np.allclose(
+            physics.calculate_auv2_acceleration(np.array([10, 0, 0, 10]), np.pi / 2, 0),
+            np.array([0, 0.2])
+        ))
+        # if all relative acceleration is vertical but theta is pi/2, then all acceleration should become -X
+        self.assertTrue(np.allclose(
+            physics.calculate_auv2_acceleration(np.array([10, 0, 0, 10]), np.pi / 2, np.pi/2),
+            np.array([-0.2, 0])
+        ))
+        # if theta is not pi/2, then all relative Y-acceleration should not become -X
+        self.assertFalse(np.allclose(
+            physics.calculate_auv2_acceleration(np.array([10, 0, 0, 10]), np.pi / 3, np.pi/2),
+            np.array([-0.2, 0])
+        ))
+
+    def test_calculate_auv2_angular_acceleration(self):
+        # No force should have no torque
+        self.assertEqual(
+            physics.calculate_auv2_angular_acceleration(np.array([0, 0, 0, 0]), 0, 1, 1), 
+            0
         )
-
-
+        # If all of the force is perpendicular, than it should all be torque
+        self.assertAlmostEqual(
+            physics.calculate_auv2_angular_acceleration(np.array([10, 0, 0, 0]), np.pi / 2, 1, 1),
+            0.1
+        )
+        # Equal forces should cancel out
+        self.assertEqual(
+            physics.calculate_auv2_angular_acceleration(np.array([10, 10, 10, 10]), np.pi / 4, 1, 1),
+            0
+        )
+        # Unequal forces should create some torque
+        self.assertNotEqual(
+            physics.calculate_auv2_angular_acceleration(np.array([15, 10, 14, 10]), np.pi / 4, 1, 1),
+            0
+        )
+        # Sample case: only T1 is active, exerting a force of 10 Newtons at an angle alpha of pi / 4 with a moment arm of sqrt(2)
+        self.assertAlmostEqual(
+            physics.calculate_auv2_angular_acceleration(np.array([10, 0, 0, 0]), np.pi / 4, 1, 1),
+            0.14142135623
+        )
 if __name__ == "__main__":
     unittest.main()
