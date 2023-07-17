@@ -40,21 +40,16 @@ def will_it_float(volume: float, mass: float) -> bool:
         bool: True if the object will float, False if it will sink
     """
     if volume <= 0:
-        raise ValueError("Volume or mass is negative.")
+        raise ValueError("Volume is less than or equal to 0.")
     if mass <= 0:
-        raise ValueError("Volume or mass is negative.")
+        raise ValueError("Mass is less than or equal to 0.")
 
     buoyancy_force = calculate_buoyancy(volume, density_water)
     gravity_force = mass * gravity
     if buoyancy_force == gravity_force:
         return None
-
-    if buoyancy_force > gravity_force:
-        return True
-    elif buoyancy_force < gravity_force:
-        return False
     else:
-        return None
+        return buoyancy_force > gravity_force
 
 
 def calculate_pressure(depth: float) -> float:
@@ -87,7 +82,7 @@ def calculate_acceleration(force: float, mass: float) -> float:
         float: the acceleration in m/s^2
     """
     if mass <= 0:
-        raise ValueError("Mass is negative.")
+        raise ValueError("Mass is less than or equal to 0.")
     acceleration = force / mass
     return acceleration
 
@@ -158,20 +153,16 @@ def calculate_auv_acceleration(
     Returns:
         float or None: the acceleration in m/s^2, or None if there is an error
     """
-    if force_magnitude > 100:
-        raise ValueError("The thruster should only apply a force up to 100N.")
+    if mass <= 0:
+        raise ValueError("Mass is less than or equal to 0.")
 
-    try:
-        acceleration_x = calculate_acceleration(
-            round(force_magnitude * np.cos(force_angle), 2), mass
-        )
-        acceleration_y = calculate_acceleration(
-            round(force_magnitude * np.sin(force_angle), 2), mass
-        )
-        return np.array([acceleration_x, acceleration_y])
-    except Exception as e:
-        print("There is an exception when calling calculate_acceleration.")
-        return None
+    acceleration_x = calculate_acceleration(
+        round(force_magnitude * np.cos(force_angle), 2), mass
+    )
+    acceleration_y = calculate_acceleration(
+        round(force_magnitude * np.sin(force_angle), 2), mass
+    )
+    return np.array([acceleration_x, acceleration_y])
 
 
 def calculate_auv_angular_acceleration(
@@ -196,17 +187,11 @@ def calculate_auv_angular_acceleration(
     if thruster_distance < 0:
         raise ValueError("The thruster distance is negative.")
 
-    try:
-        torque = calculate_torque(
-            force_magnitude, force_direction * 180 / np.pi, thruster_distance
-        )
-        angular_acceleration = calculate_angular_acceleration(torque, moment_of_inertia)
-        return angular_acceleration
-    except Exception as e:
-        print(
-            "There is an exception from calculating the angular acceleration. Check the inputs."
-        )
-        return None
+    torque = calculate_torque(
+        force_magnitude, force_direction * 180 / np.pi, thruster_distance
+    )
+    angular_acceleration = calculate_angular_acceleration(torque, moment_of_inertia)
+    return angular_acceleration
 
 
 def calculate_auv2_acceleration(
@@ -222,18 +207,24 @@ def calculate_auv2_acceleration(
     Returns:
         float, acceleration of the AUV
     """
+    if mass <= 0:
+        raise ValueError("Mass is less than or equal to 0.")
+
     # Matrix to project the thrust vectors onto the relative X and Y plane of the AUV
-    projection_matrix = np.round(np.array(
-        [
-            [np.cos(alpha), np.cos(alpha), -np.cos(alpha), -np.cos(alpha)],
-            [np.sin(alpha), -np.sin(alpha), -np.sin(alpha), np.sin(alpha)],
-        ]
-    ), 6)
+    projection_matrix = np.round(
+        np.array(
+            [
+                [np.cos(alpha), np.cos(alpha), -np.cos(alpha), -np.cos(alpha)],
+                [np.sin(alpha), -np.sin(alpha), -np.sin(alpha), np.sin(alpha)],
+            ]
+        ),
+        6,
+    )
     projected_forces = np.matmul(projection_matrix, thrusters)
     # Rotation matrix to project the total force vectors on to the global X and Y axis
-    rotation_matrix = np.round(np.array(
-        [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
-    ), 6)
+    rotation_matrix = np.round(
+        np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]), 6
+    )
     (force_x, force_y) = np.matmul(rotation_matrix, projected_forces)
     # Convert force into acceleration
     acceleration = np.array(
@@ -262,22 +253,35 @@ def calculate_auv2_angular_acceleration(
     Returns:
         float: the angular acceleration of the AUV in rads/s^2
     """
-    moment_arm = np.sqrt(np.power(horizontal_distance, 2) + np.power(vertical_distance, 2)) # r in T = rf
+    if vertical_distance < 0 or horizontal_distance < 0:
+        raise ValueError("Horizontal or vertical distance is negative.")
+    if moment_of_inertia <= 0:
+        raise ValueError("Moment of inertia is less than or equal to 0.")
+
+    moment_arm = np.sqrt(
+        np.power(horizontal_distance, 2) + np.power(vertical_distance, 2)
+    )
 
     beta = np.arctan(vertical_distance / horizontal_distance)
+    # alpha + beta is the angle from the vector to the moment arm
     total_angle = alpha + beta
 
-    projection_array = np.round(np.array(
-        [
-            np.sin(total_angle),
-            -np.sin(total_angle),
-            np.sin(total_angle),
-            -np.sin(total_angle)
-        ]
-    ), 6)
-    
-    torques = np.matmul(projection_array * moment_arm, thrusters) # Calculate each torque
-    total_torque = np.sum(torques) # Sum the torque
+    projection_array = np.round(
+        np.array(
+            [
+                np.sin(total_angle),
+                -np.sin(total_angle),
+                np.sin(total_angle),
+                -np.sin(total_angle),
+            ]
+        ),
+        6,
+    )
+
+    torques = np.matmul(
+        projection_array * moment_arm, thrusters
+    )  # Calculate each torque
+    total_torque = np.sum(torques)  # Sum the torque
     angular_acceleration = calculate_angular_acceleration(
         total_torque, moment_of_inertia
     )
