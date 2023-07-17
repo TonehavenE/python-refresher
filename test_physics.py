@@ -140,6 +140,10 @@ class TestPhysics(unittest.TestCase):
             )
         )
 
+        # Check that negative mass throws an error
+        with self.assertRaises(ValueError):
+            physics.calculate_auv2_acceleration([0, 0, 0, 0], 45, 0, -100)
+
     def test_calculate_auv2_angular_acceleration(self):
         # No force should have no torque
         self.assertEqual(
@@ -176,6 +180,11 @@ class TestPhysics(unittest.TestCase):
             ),
             0.14142135623,
         )
+        # Check that negative distances, and moment of inertia throw errors
+        with self.assertRaises(ValueError):
+            physics.calculate_auv2_angular_acceleration([0, 0, 0, 0], 45, -10, 10)
+            physics.calculate_auv2_angular_acceleration([0, 0, 0, 0], 45, 10, -10)
+            physics.calculate_auv2_angular_acceleration([0, 0, 0, 0], 45, 10, 10, -100)
 
 
 if __name__ == "__main__":
