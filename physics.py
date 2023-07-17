@@ -109,13 +109,17 @@ def calculate_torque(
     """
     Calculates the torque applied to an object given the force applied to it and the distance from the axis of rotation.
     Arguments:
-        force_magnitude: float, the magnitude of the force applied to the object in Newtons
+        force_magnitude: float, the magnitude of the force applied to the object in Newtons. Errors if magnitude is less than or equal to 0.
         force_direction: float, the direction of the force applied to the object in degrees
         moment_arm: float, the distance from the axis of rotation to the point where the force is applied in meters
     Returns:
-        float: the torque in Newton-meters
+        float: the torque in Newton-meters.
     """
-    torque = force_magnitude * np.sin(force_direction * np.pi / 180) * moment_arm
+    if force_magnitude <= 0:
+        raise ValueError("Force magnitude is less than or 0.")
+    if moment_arm <= 0:
+        raise ValueError("Moment arm is less than or equal to 0.")
+    torque = force_magnitude * np.sin(np.deg2rad(force_direction)) * moment_arm
     return torque
 
 
@@ -131,7 +135,7 @@ def calculate_moment_of_inertia(mass: float, distance: float) -> float:
     if mass <= 0:
         raise ValueError("Mass is less than or equal to 0.")
 
-    moment_of_inertia = mass * distance**2
+    moment_of_inertia = mass * np.power(distance, 2)
     return moment_of_inertia
 
 
@@ -141,9 +145,9 @@ def calculate_auv_acceleration(
     mass: float = 100,
     volume: float = 0.1,
     thruster_distance: float = 0.5,
-) -> float:
+) -> np.ndarray:
     """
-    Calculates the acceleration of the AUV in the 2D plane.
+    Calculates the acceleration of the AUV in the 2D plane of the vehicle.
     Arguments:
         force_magnitude: float, the magnitude of the force in Newtons
         force_angle: float, the angle of the force applied by the thruster in radians, measured from the x-axis
@@ -151,17 +155,13 @@ def calculate_auv_acceleration(
         volume (optional, default 0.1): float, the volume of the AUV
         thruster_distance (optional, default 0.5): float, the distance from the center of mass to the thruster in meters.
     Returns:
-        float or None: the acceleration in m/s^2, or None if there is an error
+        np.ndarray: the acceleration in m/s^2, or None if there is an error
     """
     if mass <= 0:
         raise ValueError("Mass is less than or equal to 0.")
 
-    acceleration_x = calculate_acceleration(
-        round(force_magnitude * np.cos(force_angle), 2), mass
-    )
-    acceleration_y = calculate_acceleration(
-        round(force_magnitude * np.sin(force_angle), 2), mass
-    )
+    acceleration_x = calculate_acceleration(force_magnitude * np.cos(force_angle), mass)
+    acceleration_y = calculate_acceleration(force_magnitude * np.sin(force_angle), mass)
     return np.array([acceleration_x, acceleration_y])
 
 
@@ -188,7 +188,7 @@ def calculate_auv_angular_acceleration(
         raise ValueError("The thruster distance is negative.")
 
     torque = calculate_torque(
-        force_magnitude, force_direction * 180 / np.pi, thruster_distance
+        force_magnitude, np.rad2deg(force_direction), thruster_distance
     )
     angular_acceleration = calculate_angular_acceleration(torque, moment_of_inertia)
     return angular_acceleration
@@ -210,26 +210,25 @@ def calculate_auv2_acceleration(
     if mass <= 0:
         raise ValueError("Mass is less than or equal to 0.")
 
+    if type(thrusters) != np.ndarray:
+        raise TypeError("Thrusters is not a Numpy array.")
+
     # Matrix to project the thrust vectors onto the relative X and Y plane of the AUV
-    projection_matrix = np.round(
-        np.array(
-            [
-                [np.cos(alpha), np.cos(alpha), -np.cos(alpha), -np.cos(alpha)],
-                [np.sin(alpha), -np.sin(alpha), -np.sin(alpha), np.sin(alpha)],
-            ]
-        ),
-        6,
+    projection_matrix = np.array(
+        [
+            [np.cos(alpha), np.cos(alpha), -np.cos(alpha), -np.cos(alpha)],
+            [np.sin(alpha), -np.sin(alpha), -np.sin(alpha), np.sin(alpha)],
+        ]
     )
+
     projected_forces = np.matmul(projection_matrix, thrusters)
     # Rotation matrix to project the total force vectors on to the global X and Y axis
-    rotation_matrix = np.round(
-        np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]), 6
+    rotation_matrix = np.array(
+        [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
     )
-    (force_x, force_y) = np.matmul(rotation_matrix, projected_forces)
+    force = np.matmul(rotation_matrix, projected_forces)
     # Convert force into acceleration
-    acceleration = np.array(
-        [calculate_acceleration(force_x, mass), calculate_acceleration(force_y, mass)]
-    )
+    acceleration = calculate_acceleration(force, mass)
     return acceleration
 
 
@@ -266,7 +265,7 @@ def calculate_auv2_angular_acceleration(
     # alpha + beta is the angle from the vector to the moment arm
     total_angle = alpha + beta
 
-    projection_array = np.round(
+    projection_array = (
         np.array(
             [
                 np.sin(total_angle),
@@ -275,7 +274,6 @@ def calculate_auv2_angular_acceleration(
                 -np.sin(total_angle),
             ]
         ),
-        6,
     )
 
     torques = np.matmul(
