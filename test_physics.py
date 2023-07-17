@@ -140,9 +140,11 @@ class TestPhysics(unittest.TestCase):
             )
         )
 
-        # Check that negative mass throws an error
+        # Check that negative mass or incorrect np.array throws an error
         with self.assertRaises(ValueError):
-            physics.calculate_auv2_acceleration([0, 0, 0, 0], 45, 0, -100)
+            physics.calculate_auv2_acceleration(np.array([0, 0, 0, 0]), 45, 0, -100)
+            physics.calculate_auv2_acceleration(np.array([[], []]), 45, 0)
+            physics.calculate_auv2_acceleration([], 45, 0)
 
     def test_calculate_auv2_angular_acceleration(self):
         # No force should have no torque
@@ -182,9 +184,23 @@ class TestPhysics(unittest.TestCase):
         )
         # Check that negative distances, and moment of inertia throw errors
         with self.assertRaises(ValueError):
-            physics.calculate_auv2_angular_acceleration([0, 0, 0, 0], 45, -10, 10)
-            physics.calculate_auv2_angular_acceleration([0, 0, 0, 0], 45, 10, -10)
-            physics.calculate_auv2_angular_acceleration([0, 0, 0, 0], 45, 10, 10, -100)
+            physics.calculate_auv2_angular_acceleration(
+                np.array([0, 0, 0, 0]), 45, -10, 10
+            )
+            physics.calculate_auv2_angular_acceleration(
+                np.array([0, 0, 0, 0]), 45, 10, -10
+            )
+            physics.calculate_auv2_angular_acceleration(
+                np.array([0, 0, 0, 0]), 45, 10, 10, -100
+            )
+            physics.calculate_auv2_angular_acceleration(np.array([[], []]), 45, 10, 10)
+            physics.calculate_auv2_angular_acceleration([], 45, 10, 10)
+
+    def test_simulate_auv2_motion(self):
+        (times, x, y, theta, v, omega, a) = physics.simulate_auv2_motion(
+            [0, 0, 0, 0], 45, 1, 1, 100, 100, 0.1, 0.3, 0, 0, 0
+        )
+        self.assertTrue(np.allclose(times, np.array([0, 0.1, 0.2])))
 
 
 if __name__ == "__main__":

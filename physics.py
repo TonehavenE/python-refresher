@@ -5,6 +5,7 @@ Eben Quenneville
 7/13/2023
 """
 import numpy as np
+import matplotlib.pyplot as plt
 
 density_water = 1000  # kg/m^3
 gravity = 9.81  # m/s^2, change if you are in space
@@ -196,22 +197,25 @@ def calculate_auv_angular_acceleration(
 
 def calculate_auv2_acceleration(
     thrusters: np.ndarray, alpha: float, theta: float, mass: float = 100
-) -> float:
+) -> np.ndarray:
     """
     Calculates the acceleration of the AUV in the 2D plane given an array of thrusters.
     Arguments:
-        thrusters: np.ndarray,  the magnitudes of the forces applied by the thrusters in Newtons
+        thrusters: np.ndarray, the magnitudes of the forces applied by the thrusters in Newtons. e.g. np.array([10, 10, 10, 10])
         alpha: float, the angle of the thrusters in radians.
         theta: float, the angle of the AUV
         mass: float = 100: the mass of the AUV in kilograms. The default value is 100kg.
     Returns:
-        float, acceleration of the AUV
+        np.ndarray, acceleration of the AUV
     """
     if mass <= 0:
         raise ValueError("Mass is less than or equal to 0.")
 
     if type(thrusters) != np.ndarray:
         raise TypeError("Thrusters is not a Numpy array.")
+
+    if np.shape(thrusters) != (4,):
+        raise ValueError("The shape of the thrusters vector is incorrect.")
 
     # Matrix to project the thrust vectors onto the relative X and Y plane of the AUV
     projection_matrix = np.array(
@@ -256,6 +260,10 @@ def calculate_auv2_angular_acceleration(
         raise ValueError("Horizontal or vertical distance is negative.")
     if moment_of_inertia <= 0:
         raise ValueError("Moment of inertia is less than or equal to 0.")
+    if type(thrusters) != np.ndarray:
+        raise TypeError("Thrusters is not a Numpy array.")
+    if np.shape(thrusters) != (4,):
+        raise ValueError("The shape of the thrusters vector is incorrect.")
 
     moment_arm = np.sqrt(
         np.power(horizontal_distance, 2) + np.power(vertical_distance, 2)
@@ -265,22 +273,137 @@ def calculate_auv2_angular_acceleration(
     # alpha + beta is the angle from the vector to the moment arm
     total_angle = alpha + beta
 
-    projection_array = (
-        np.array(
-            [
-                np.sin(total_angle),
-                -np.sin(total_angle),
-                np.sin(total_angle),
-                -np.sin(total_angle),
-            ]
-        ),
-    )
+    projection_array = np.array(
+        [
+            np.sin(total_angle),
+            -np.sin(total_angle),
+            np.sin(total_angle),
+            -np.sin(total_angle),
+        ]
+    ) * float(moment_arm)
 
-    torques = np.matmul(
-        projection_array * moment_arm, thrusters
-    )  # Calculate each torque
+    torques = np.matmul(projection_array, thrusters)  # Calculate each torque
     total_torque = np.sum(torques)  # Sum the torque
     angular_acceleration = calculate_angular_acceleration(
         total_torque, moment_of_inertia
     )
     return angular_acceleration
+
+
+def simulate_auv2_motion(
+    thrusters: np.ndarray,
+    alpha: float,
+    horizontal_distance: float,
+    vertical_distance: float,
+    moment_of_inertia: float = 100,
+    mass: float = 100,
+    time_step: float = 0.1,
+    time_final: float = 10,
+    initial_x: float = 0,
+    initial_y: float = 0,
+    initial_theta: float = 0,
+):
+    """
+    Simulates the motion of an AUV in the 2D plane.
+    Arguments:
+        thrusters: np.ndarray, an array of the magnitudes of the forces applied by the thrusters in Newtons
+        alpha: float, the angle of the thrusters in radians
+        horizontal_distance: float, the horizontal distance to the thrusters in meters
+        vertical_distance: float, the vertical distance to the thrusters in meters
+        moment_of_inertia: float = 100, the moment of inertia of the AUV in kg * m^2
+        time_step: float = 0.1, the time step of the simulation in seconds
+        time_final: float = 10, the final time of the simulation in seconds
+        initial_x: float = 0, the initial x position of the simulation in meters
+        initial_y: float = 0, the initial y position of the simulation in meters
+        initial_theta: float = 0, the initial angle of the AUV in radians
+    Returns a tuple with the following elements:
+        times: np.ndarray, the time steps of the simulation in seconds.
+        x_array: np.ndarray, the x-positions of the AUV in meters.
+        y_array: np.ndarray, the y-positions of the AUV in meters.
+        theta_array: np.ndarray, the angles of the AUV in radians.
+        velocity_array: np.ndarray, the velocities of the AUV in meters per second.
+        angular_velocity_array: np.ndarray, the angular velocities of the AUV in radians per second.
+        acceleration_array: np.ndarray, the accelerations of the AUV in meters per second squared.
+    """
+    times = np.arange(0, time_final, time_step)
+    x_array = np.zeros_like(times)
+    x_array[0] = initial_x
+    y_array = np.zeros_like(times)
+    y_array[0] = initial_y
+    theta_array = np.zeros_like(times)
+    theta_array[0] = initial_theta
+    velocity_array = np.zeros(
+        shape=(len(times), 2)
+    )  # np.arange(np.array([0, 0]), time_final, time_step)
+    acceleration_array = np.zeros(
+        shape=(len(times), 2)
+    )  # np.arange(np.array([0, 0]), time_final, time_step)
+    angular_acceleration_array = np.zeros_like(times)
+    angular_velocity_array = np.zeros_like(times)
+
+    # Simulation Loop
+    for i in range(1, len(times)):
+        acceleration_array[i] = calculate_auv2_acceleration(
+            thrusters, alpha, theta_array[i - 1], mass
+        )
+        velocity_array[i] = (
+            velocity_array[i - 1] + acceleration_array[i - 1] * time_step
+        )
+        x_array[i] = x_array[i - 1] + velocity_array[i - 1][0] * time_step
+        y_array[i] = y_array[i - 1] + velocity_array[i - 1][1] * time_step
+        angular_acceleration_array[i] = angular_acceleration_array[
+            i - 1
+        ] + calculate_auv2_angular_acceleration(
+            thrusters, alpha, horizontal_distance, vertical_distance, moment_of_inertia
+        )
+        angular_velocity_array[i] = (
+            angular_velocity_array[i - 1]
+            + angular_acceleration_array[i - 1] * time_step
+        )
+        theta_array[i] = np.mod(
+            theta_array[i - 1] + angular_velocity_array[i - 1] * time_step, np.pi * 2
+        )
+
+    output_tuple = (
+        times,
+        x_array,
+        y_array,
+        theta_array,
+        velocity_array,
+        angular_velocity_array,
+        acceleration_array,
+    )
+    return output_tuple
+
+
+def plot_auv2_motion(
+    times: np.ndarray,
+    x_array: np.ndarray,
+    y_array: np.ndarray,
+    theta_array: np.ndarray,
+    velocity_array: np.ndarray,
+    angular_velocity_array: np.ndarray,
+    acceleration_array: np.ndarray,
+):
+    plt.plot(times, x_array, label="X Positions")
+    plt.plot(times, y_array, label="Y Positions")
+    plt.plot(times, theta_array, label="Theta")
+    velocity_x = np.zeros_like(times)
+    velocity_y = np.zeros_like(times)
+    acceleration_x = np.zeros_like(times)
+    acceleration_y = np.zeros_like(times)
+    for i in range(1, len(times)):
+        velocity_x[i] = velocity_array[i][0]
+        velocity_y[i] = velocity_array[i][1]
+        acceleration_x[i] = acceleration_array[i][0]
+        acceleration_y[i] = acceleration_array[i][1]
+    plt.plot(times, velocity_x, label="X Velocity")
+    plt.plot(times, velocity_y, label="Y Velocity")
+    plt.plot(times, acceleration_x, label="X Acceleration")
+    plt.plot(times, acceleration_y, label="Y Acceleration")
+    plt.plot(times, angular_velocity_array, label="Angular Velocity")
+
+    plt.xlabel("Time (s)")
+    plt.ylabel("Variables")
+    plt.legend()
+    plt.show()
