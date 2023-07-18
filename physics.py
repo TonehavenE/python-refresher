@@ -330,6 +330,10 @@ def simulate_auv2_motion(
         angular_velocity_array: np.ndarray, the angular velocities of the AUV in radians per second.
         acceleration_array: np.ndarray, the accelerations of the AUV in meters per second squared.
     """
+    if type(thrusters) != np.ndarray:
+        raise TypeError("Thrusters is not a Numpy array.")
+    if np.shape(thrusters) != (4,):
+        raise ValueError("The shape of the thrusters vector is incorrect.")
     times = np.arange(0, time_final, time_step)
     x_array = np.zeros_like(times)
     x_array[0] = initial_x
@@ -349,22 +353,19 @@ def simulate_auv2_motion(
     # Simulation Loop
     for i in range(1, len(times)):
         acceleration_array[i] = calculate_auv2_acceleration(
-            thrusters, alpha, theta_array[i - 1], mass
+            thrusters, alpha, theta_array[i], mass
         )
-        velocity_array[i] = (
-            velocity_array[i - 1] + acceleration_array[i - 1] * time_step
-        )
-        x_array[i] = x_array[i - 1] + velocity_array[i - 1][0] * time_step
-        y_array[i] = y_array[i - 1] + velocity_array[i - 1][1] * time_step
+        velocity_array[i] = velocity_array[i - 1] + acceleration_array[i] * time_step
+        x_array[i] = x_array[i - 1] + velocity_array[i][0] * time_step
+        y_array[i] = y_array[i - 1] + velocity_array[i][1] * time_step
         angular_acceleration_array[i] = calculate_auv2_angular_acceleration(
             thrusters, alpha, horizontal_distance, vertical_distance, moment_of_inertia
         )
         angular_velocity_array[i] = (
-            angular_velocity_array[i - 1]
-            + angular_acceleration_array[i - 1] * time_step
+            angular_velocity_array[i - 1] + angular_acceleration_array[i] * time_step
         )
         theta_array[i] = np.mod(
-            theta_array[i - 1] + angular_velocity_array[i - 1] * time_step, np.pi * 2
+            theta_array[i - 1] + angular_velocity_array[i] * time_step, np.pi * 2
         )
 
     output_tuple = (
@@ -395,7 +396,7 @@ def plot_auv2_motion(
     velocity_y = np.zeros_like(times)
     acceleration_x = np.zeros_like(times)
     acceleration_y = np.zeros_like(times)
-    for i in range(1, len(times)):
+    for i in range(0, len(times)):
         velocity_x[i] = velocity_array[i][0]
         velocity_y[i] = velocity_array[i][1]
         acceleration_x[i] = acceleration_array[i][0]
