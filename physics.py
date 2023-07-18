@@ -6,6 +6,8 @@ Eben Quenneville
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import animation
 
 density_water = 1000  # kg/m^3
 gravity = 9.81  # m/s^2, change if you are in space
@@ -256,8 +258,8 @@ def calculate_auv2_angular_acceleration(
     Returns:
         float: the angular acceleration of the AUV in rads/s^2
     """
-    if vertical_distance < 0 or horizontal_distance < 0:
-        raise ValueError("Horizontal or vertical distance is negative.")
+    if vertical_distance <= 0 or horizontal_distance <= 0:
+        raise ValueError("Horizontal or vertical distance is less than or equal to 0.")
     if moment_of_inertia <= 0:
         raise ValueError("Moment of inertia is less than or equal to 0.")
     if type(thrusters) != np.ndarray:
@@ -273,14 +275,17 @@ def calculate_auv2_angular_acceleration(
     # alpha + beta is the angle from the vector to the moment arm
     total_angle = alpha + beta
 
-    projection_array = np.array(
-        [
-            np.sin(total_angle),
-            -np.sin(total_angle),
-            np.sin(total_angle),
-            -np.sin(total_angle),
-        ]
-    ) * float(moment_arm)
+    projection_array = (
+        np.array(
+            [
+                np.sin(total_angle),
+                -np.sin(total_angle),
+                np.sin(total_angle),
+                -np.sin(total_angle),
+            ]
+        )
+        * moment_arm
+    )
 
     torques = np.matmul(projection_array, thrusters)  # Calculate each torque
     total_torque = np.sum(torques)  # Sum the torque
@@ -407,3 +412,92 @@ def plot_auv2_motion(
     plt.ylabel("Variables")
     plt.legend()
     plt.show()
+
+
+def plot_auv2_motion_individual(
+    times: np.ndarray,
+    x_array: np.ndarray,
+    y_array: np.ndarray,
+    theta_array: np.ndarray,
+    velocity_array: np.ndarray,
+    angular_velocity_array: np.ndarray,
+    acceleration_array: np.ndarray,
+    title: str,
+):
+    plt.style.use("dark_background")
+    figure, axs = plt.subplots(2, 4, figsize=(15, 15))
+    axs[0, 0].plot(times, x_array)
+    axs[0, 0].set_title("X Position")
+    axs[0, 0].set_ylabel("m")
+
+    axs[0, 1].plot(times, y_array)
+    axs[0, 1].set_title("Y Position")
+    axs[0, 1].set_ylabel("m")
+
+    axs[0, 2].plot(times, theta_array)
+    axs[0, 2].set_title("Angle")
+    axs[0, 2].set_ylabel("rad")
+
+    axs[0, 3].plot(times, velocity_array[:, 0])
+    axs[0, 3].set_title("X Velocity")
+    axs[0, 3].set_ylabel("m/s")
+
+    axs[1, 0].plot(times, velocity_array[:, 1])
+    axs[1, 0].set_title("Y Velocity")
+    axs[1, 0].set_ylabel("m/s")
+
+    axs[1, 1].plot(times, angular_velocity_array)
+    axs[1, 1].set_title("Angular Velocity")
+    axs[1, 1].set_ylabel("rad/s")
+
+    axs[1, 2].plot(times, acceleration_array[:, 0])
+    axs[1, 2].set_title("X Acceleration")
+    axs[1, 2].set_ylabel("m/s^2")
+
+    axs[1, 3].plot(times, acceleration_array[:, 1])
+    axs[1, 3].set_title("Y Acceleration")
+    axs[1, 3].set_ylabel("m/s^2")
+
+    figure.tight_layout()
+    figure.suptitle(title)
+
+    plt.show()
+
+
+def plot_auv2_motion_animated(times: np.ndarray, x: np.ndarray, y: np.ndarray):
+    (x_max, x_min) = (np.max(x), np.min(x))
+    (y_max, y_min) = (np.max(y), np.min(y))
+
+    # Setting up Data Set for Animation
+    dataSet = np.array([x, y])  # Combining our position coordinates
+    numDataPoints = len(times)
+
+    def animate_func(num):
+        ax.clear()  # Clears the figure to update the line, point,
+        # title, and axes
+        # Updating Trajectory Line (num+1 due to Python indexing)
+        ax.plot(dataSet[0, : num + 1], dataSet[1, : num + 1], c="blue")
+        # Updating Point Location
+        ax.scatter(dataSet[0, num], dataSet[1, num], c="blue", marker="o")
+        # Adding Constant Origin
+        ax.plot(dataSet[0, 0], dataSet[1, 0], c="black", marker="o")
+        ax.set_xlim([x_min, x_max])
+        ax.set_ylim([y_min, y_max])
+
+        # Adding Figure Labels
+        ax.set_title(
+            "Trajectory \nTime = " + str(np.round(times[num], decimals=2)) + " sec"
+        )
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+
+    # Plotting the Animation
+    fig = plt.figure()
+    ax = plt.axes()
+    line_ani = animation.FuncAnimation(
+        fig, animate_func, interval=100, frames=numDataPoints
+    )
+
+    f = r"c://Users/Eben/Dev/python-refresher/animated_motion.gif"
+    writergif = animation.PillowWriter(fps=numDataPoints / 6)
+    line_ani.save(f, writer=writergif)

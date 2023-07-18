@@ -197,10 +197,67 @@ class TestPhysics(unittest.TestCase):
             physics.calculate_auv2_angular_acceleration([], 45, 10, 10)
 
     def test_simulate_auv2_motion(self):
+        # 0 magnitude forces
         (times, x, y, theta, v, omega, a) = physics.simulate_auv2_motion(
-            [0, 0, 0, 0], 45, 1, 1, 100, 100, 0.1, 0.3, 0, 0, 0
+            np.array([0, 0, 0, 0]), np.pi / 4, 1, 1, 100, 100, 0.1, 0.3, 0, 0, 0
         )
-        self.assertTrue(np.allclose(times, np.array([0, 0.1, 0.2])))
+        np.testing.assert_array_equal(times, np.array([0, 0.1, 0.2]))
+        np.testing.assert_array_equal(x, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(y, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(theta, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(v, np.array([[0, 0], [0, 0], [0, 0]]))
+        np.testing.assert_array_equal(omega, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(a, np.array([[0, 0], [0, 0], [0, 0]]))
+
+        # Test with counteracting forces, should only be torque
+        (times, x, y, theta, v, omega, a) = physics.simulate_auv2_motion(
+            np.array([10, 0, 10, 0]),
+            np.pi / 4,
+            1,
+            1,
+            100,
+            100,
+            0.1,
+            0.3,
+            0,
+            0,
+            np.pi / 4,
+        )
+        np.testing.assert_array_equal(times, np.array([0, 0.1, 0.2]))
+        np.testing.assert_array_equal(x, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(y, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(
+            theta, np.array([np.pi / 4, np.pi / 4, np.pi / 4])
+        )
+        np.testing.assert_array_equal(v, np.array([[0, 0], [0, 0], [0, 0]]))
+        np.testing.assert_array_almost_equal(omega, np.array([0, 0, 0.028284]))
+        np.testing.assert_array_equal(a, np.array([[0, 0], [0, 0], [0, 0]]))
+
+        # Test with all equal forces
+        (times, x, y, theta, v, omega, a) = physics.simulate_auv2_motion(
+            np.array([10, 10, 10, 10]), np.pi / 4, 1, 1, 100, 100, 0.1, 0.3, 0, 0, 0,
+        )
+        np.testing.assert_array_equal(times, np.array([0, 0.1, 0.2]))
+        np.testing.assert_array_equal(x, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(y, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(theta, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(v, np.array([[0, 0], [0, 0], [0, 0]]))
+        np.testing.assert_array_equal(omega, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(a, np.array([[0, 0], [0, 0], [0, 0]]))
+
+        # Test with just 1 force
+        (times, x, y, theta, v, omega, a) = physics.simulate_auv2_motion(
+            np.array([10, 0, 0, 0]), np.pi / 4, 1, 1, 100, 100, 0.1, 0.3, 0, 0, 0,
+        )
+        np.testing.assert_array_equal(times, np.array([0, 0.1, 0.2]))
+        np.testing.assert_array_equal(x, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(y, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(theta, np.array([0, 0, 0]))
+        np.testing.assert_array_almost_equal(
+            v, np.array([[0, 0], [0, 0], [0.007071, 0.007071]])
+        )
+        np.testing.assert_array_almost_equal(omega, np.array([0, 0, 0.014142]))
+        np.testing.assert_array_almost_equal(a, np.array([[0, 0], [0.070711, 0.070711], [0.070711, 0.070711]]))
 
 
 if __name__ == "__main__":
