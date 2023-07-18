@@ -356,9 +356,7 @@ def simulate_auv2_motion(
         )
         x_array[i] = x_array[i - 1] + velocity_array[i - 1][0] * time_step
         y_array[i] = y_array[i - 1] + velocity_array[i - 1][1] * time_step
-        angular_acceleration_array[i] = angular_acceleration_array[
-            i - 1
-        ] + calculate_auv2_angular_acceleration(
+        angular_acceleration_array[i] = calculate_auv2_angular_acceleration(
             thrusters, alpha, horizontal_distance, vertical_distance, moment_of_inertia
         )
         angular_velocity_array[i] = (
@@ -498,6 +496,6 @@ def plot_auv2_motion_animated(times: np.ndarray, x: np.ndarray, y: np.ndarray):
         fig, animate_func, interval=100, frames=numDataPoints
     )
 
-    f = r"c://Users/Eben/Dev/python-refresher/animated_motion.gif"
+    f = r"./animated_motion.gif"
     writergif = animation.PillowWriter(fps=numDataPoints / 6)
     line_ani.save(f, writer=writergif)
