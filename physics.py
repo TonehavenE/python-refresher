@@ -316,6 +316,7 @@ def simulate_auv2_motion(
         horizontal_distance: float, the horizontal distance to the thrusters in meters
         vertical_distance: float, the vertical distance to the thrusters in meters
         moment_of_inertia: float = 100, the moment of inertia of the AUV in kg * m^2
+        mass: float = 100, kg
         time_step: float = 0.1, the time step of the simulation in seconds
         time_final: float = 10, the final time of the simulation in seconds
         initial_x: float = 0, the initial x position of the simulation in meters
@@ -363,7 +364,7 @@ def simulate_auv2_motion(
         )
 
         acceleration_array[i] = calculate_auv2_acceleration(
-            thrusters, alpha, theta_array[i - 1], mass
+            thrusters, alpha, theta_array[i], mass
         )
         velocity_array[i] = velocity_array[i - 1] + acceleration_array[i] * time_step
         x_array[i] = x_array[i - 1] + velocity_array[i][0] * time_step
