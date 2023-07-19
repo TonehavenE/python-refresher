@@ -352,12 +352,6 @@ def simulate_auv2_motion(
 
     # Simulation Loop
     for i in range(1, len(times)):
-        acceleration_array[i] = calculate_auv2_acceleration(
-            thrusters, alpha, theta_array[i], mass
-        )
-        velocity_array[i] = velocity_array[i - 1] + acceleration_array[i] * time_step
-        x_array[i] = x_array[i - 1] + velocity_array[i][0] * time_step
-        y_array[i] = y_array[i - 1] + velocity_array[i][1] * time_step
         angular_acceleration_array[i] = calculate_auv2_angular_acceleration(
             thrusters, alpha, horizontal_distance, vertical_distance, moment_of_inertia
         )
@@ -367,6 +361,13 @@ def simulate_auv2_motion(
         theta_array[i] = np.mod(
             theta_array[i - 1] + angular_velocity_array[i] * time_step, np.pi * 2
         )
+
+        acceleration_array[i] = calculate_auv2_acceleration(
+            thrusters, alpha, theta_array[i - 1], mass
+        )
+        velocity_array[i] = velocity_array[i - 1] + acceleration_array[i] * time_step
+        x_array[i] = x_array[i - 1] + velocity_array[i][0] * time_step
+        y_array[i] = y_array[i - 1] + velocity_array[i][1] * time_step
 
     output_tuple = (
         times,

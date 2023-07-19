@@ -270,27 +270,15 @@ class TestPhysics(unittest.TestCase):
             0,
         )
         np.testing.assert_array_almost_equal(times, np.array([0, 0.1, 0.2]))
-        np.testing.assert_array_almost_equal(x, np.array([0.      , 0.000707, 0.002121]))
-        np.testing.assert_array_almost_equal(y, np.array([0, 0, 0]))
-        np.testing.assert_array_almost_equal(theta, np.array([0, 0, 0]))
+        np.testing.assert_array_almost_equal(x, np.array([0.0, 0.000707, 0.002121]))
+        np.testing.assert_array_almost_equal(y, np.array([0.0, 0.000707, 0.002121]))
+        np.testing.assert_array_almost_equal(theta, np.array([0.0, 0.001414, 0.004243]))
         np.testing.assert_array_almost_equal(
-            v, np.array([[0, 0], [0, 0], [0.007071, 0.007071]])
+            v, np.array([[0.0, 0.0], [0.007071, 0.007071], [0.014132, 0.014152]])
         )
-        np.testing.assert_array_almost_equal(omega, np.array([0, 0, 0.014142]))
+        np.testing.assert_array_almost_equal(omega, np.array([0.0, 0.014142, 0.028284]))
         np.testing.assert_array_almost_equal(
-            a, np.array([[0, 0], [0.070711, 0.070711], [0.070711, 0.070711]])
-        )
-
-        np.testing.assert_array_almost_equal(times, np.array([0, 0.1, 0.2]))
-        np.testing.assert_array_almost_equal(x, np.array([0, 0, 0]))
-        np.testing.assert_array_almost_equal(y, np.array([0, 0, 0]))
-        np.testing.assert_array_almost_equal(theta, np.array([0, 0, 0]))
-        np.testing.assert_array_almost_equal(
-            v, np.array([[0, 0], [0, 0], [0.007071, 0.007071]])
-        )
-        np.testing.assert_array_almost_equal(omega, np.array([0, 0, 0.014142]))
-        np.testing.assert_array_almost_equal(
-            a, np.array([[0, 0], [0.070711, 0.070711], [0.070711, 0.070711]])
+            a, np.array([[0.0, 0.0], [0.070711, 0.070711], [0.070611, 0.070811]])
         )
 
 
